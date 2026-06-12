@@ -155,9 +155,14 @@
   .form-group input, .form-group select { 
     width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ccc; font-size: 18px; box-sizing: border-box; background: #fff;
   }
+  
   .action-btn {
-    width: 100%; padding: 16px; background: #4CAF50; color: white; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: margin-top: 15px;
+    width: 100%; padding: 16px; background: #4CAF50; color: white; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 15px;
   }
+  .action-btn.update-mode {
+    background: #ff9800; /* 修改模式時按鈕變橘色 */
+  }
+
   .save-btn {
     background: #2196F3; color: white; border: none; border-radius: 12px; padding: 0 20px; font-size: 18px; font-weight: bold; cursor: pointer; white-space: nowrap;
   }
@@ -166,6 +171,8 @@
   .manager-item { 
     display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f9f9f9; border-radius: 12px; margin-bottom: 12px; font-size: 18px;
   }
+  .btn-group { display: flex; gap: 8px; }
+  .edit-btn { background: #ff9800; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
   .delete-btn { background: #ff5252; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 
   .export-box {
@@ -268,8 +275,10 @@
       </div>
     </div>
     
-    <div class="setup-form">
-      <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 20px;">➕ 新增追蹤藥品</h3>
+    <div class="setup-form" id="form-scroll-target">
+      <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 20px;" id="form-title">➕ 新增追蹤藥品</h3>
+      <input type="hidden" id="edit-index" value="-1">
+      
       <div class="form-group">
         <label>藥品名稱</label>
         <input type="text" id="new-med-name" placeholder="例如：降血壓藥">
@@ -305,7 +314,12 @@
         <label>備註事項</label>
         <input type="text" id="new-med-notice" placeholder="例如：飯後吃、不可空腹">
       </div>
-      <button class="action-btn" onclick="addMedication()">新增藥品</button>
+      <button class="action-btn" id="add-update-btn" onclick="saveMedication()">新增藥品</button>
+    </div>
+
+    <div class="med-manager-list">
+      <h3 style="margin-bottom: 15px; font-size: 20px;">追蹤中的藥品清單：</h3>
+      <div id="manager-items-container"></div>
     </div>
 
     <div class="export-box">
@@ -320,10 +334,6 @@
       <button class="reset-btn" onclick="clearTrainingData()">🧹 清除「當前藥品」打卡紀錄</button>
     </div>
 
-    <div class="med-manager-list">
-      <h3 style="margin-bottom: 15px; font-size: 20px;">追蹤中的藥品清單：</h3>
-      <div id="manager-items-container"></div>
-    </div>
   </div>
 </div>
 
@@ -348,7 +358,6 @@
   let showHistory = false;
   let userName = '先生/小姐';
   let historyFilterMode = 'all';
-  // 🌟 中文版的預設密碼也改為 1234
   let systemPassword = '1234';
 
   function playDingSound() {
@@ -382,7 +391,6 @@
     document.getElementById('setting-user-name').value = userName;
     updateGreetingDisplay();
 
-    // 🌟 讀取自訂密碼
     const storedPwd = localStorage.getItem('med_system_password');
     if (storedPwd) systemPassword = storedPwd;
     document.getElementById('setting-password').value = systemPassword;
@@ -412,7 +420,6 @@
     alert(`✅ 稱呼已成功更新為「${userName}」！`);
   }
 
-  // 🌟 儲存新密碼的功能
   function savePassword() {
     const newPwd = document.getElementById('setting-password').value.trim();
     if (!newPwd) { alert("密碼不能空白喔！"); return; }
@@ -424,7 +431,6 @@
   function toggleView(showSettings) {
     if (showSettings) {
       const pwd = prompt("🔐 進入後台請輸入密碼：");
-      // 🌟 改為比對自訂密碼變數
       if (pwd !== systemPassword) {
         if (pwd !== null) alert("❌ 密碼錯誤，無法進入設定喔！");
         return; 
@@ -471,33 +477,98 @@
           <strong>${med.icon || '💊'} ${med.name}</strong> (${getFrequencyText(med.interval)})<br>
           <span style="font-size:15px; color:#666;">📝 ${med.notice || '無備註'}</span>
         </div>
-        <button class="delete-btn" onclick="deleteMedication(${index})">刪除</button>
+        <div class="btn-group">
+          <button class="edit-btn" onclick="editMedication(${index})">✏️ 修改</button>
+          <button class="delete-btn" onclick="deleteMedication(${index})">刪除</button>
+        </div>
       `;
       container.appendChild(item);
     });
   }
 
-  function addMedication() {
+  // 🌟 將藥品資訊帶入表單準備修改
+  function editMedication(index) {
+    const med = medications[index];
+    document.getElementById('new-med-name').value = med.name;
+    document.getElementById('new-med-icon').value = med.icon || '💊';
+    document.getElementById('new-med-interval').value = med.interval;
+    document.getElementById('new-med-notice').value = med.notice || '';
+    
+    // 設定正在修改的索引
+    document.getElementById('edit-index').value = index;
+    
+    // 改變按鈕樣式與文字
+    const btn = document.getElementById('add-update-btn');
+    btn.innerText = '更新藥品資訊';
+    btn.classList.add('update-mode');
+    document.getElementById('form-title').innerText = '✏️ 修改藥品資訊';
+    
+    // 貼心地幫使用者畫面滑動到表單區塊
+    document.getElementById('form-scroll-target').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // 🌟 處理「新增」與「更新」兩種邏輯
+  function saveMedication() {
     const nameInput = document.getElementById('new-med-name');
     const iconSelect = document.getElementById('new-med-icon');
     const intervalSelect = document.getElementById('new-med-interval');
     const noticeInput = document.getElementById('new-med-notice');
-    const name = nameInput.value.trim(); const icon = iconSelect.value;
-    const interval = parseInt(intervalSelect.value); const notice = noticeInput.value.trim();
+    
+    const name = nameInput.value.trim(); 
+    const icon = iconSelect.value;
+    const interval = parseInt(intervalSelect.value); 
+    const notice = noticeInput.value.trim();
+    const editIndex = parseInt(document.getElementById('edit-index').value);
     
     if (!name) { alert('請輸入藥品名稱喔！'); return; }
-    if (medications.some(m => m.name === name)) { alert('名稱已存在囉！'); return; }
+
+    if (editIndex === -1) {
+      // 新增模式
+      if (medications.some(m => m.name === name)) { alert('名稱已存在囉！如果想修改請按下方修改按鈕。'); return; }
+      medications.push({ name, interval, notice, icon });
+      alert(`成功新增「${name}」！`);
+    } else {
+      // 🌟 更新模式
+      const oldName = medications[editIndex].name;
+      
+      // 檢查是否改名後跟其他藥品撞名
+      if (oldName !== name && medications.some(m => m.name === name)) {
+        alert('這個名稱已經有其他藥品使用了喔！'); return;
+      }
+      
+      // 如果改了名字，要把舊名字的歷史紀錄轉移到新名字底下
+      if (oldName !== name) {
+        const oldHistory = localStorage.getItem('med_history_arr_' + oldName);
+        if (oldHistory) {
+          localStorage.setItem('med_history_arr_' + name, oldHistory);
+          localStorage.removeItem('med_history_arr_' + oldName);
+        }
+        // 如果剛好改的是目前主畫面選中的藥品，同步更新
+        if (currentMedName === oldName) currentMedName = name;
+      }
+      
+      // 覆寫陣列中的資料
+      medications[editIndex] = { name, interval, notice, icon };
+      alert(`成功更新「${name}」的資訊！`);
+      
+      // 恢復表單為新增模式
+      document.getElementById('edit-index').value = -1;
+      const btn = document.getElementById('add-update-btn');
+      btn.innerText = '新增藥品';
+      btn.classList.remove('update-mode');
+      document.getElementById('form-title').innerText = '➕ 新增追蹤藥品';
+    }
     
-    medications.push({ name, interval, notice, icon });
     localStorage.setItem('user_medications', JSON.stringify(medications));
-    nameInput.value = ''; noticeInput.value = ''; currentMedName = name; 
+    nameInput.value = ''; noticeInput.value = ''; 
+    if (editIndex === -1) currentMedName = name; 
+    
     renderMainButtons(); renderManagerList();
-    alert(`成功新增「${name}」！`);
   }
 
   function deleteMedication(index) {
     const removedName = medications[index].name;
-    if (confirm(`確定要刪除「${removedName}」嗎？紀錄也會不見喔。`)) {
+    if (confirm(`確定要刪除「${removedName}」嗎？所有歷史紀錄也會不見喔。`)) {
       localStorage.removeItem('med_history_arr_' + removedName);
       medications.splice(index, 1);
       localStorage.setItem('user_medications', JSON.stringify(medications));
