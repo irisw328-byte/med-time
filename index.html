@@ -156,9 +156,9 @@
     width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ccc; font-size: 18px; box-sizing: border-box; background: #fff;
   }
   .action-btn {
-    width: 100%; padding: 16px; background: #4CAF50; color: white; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 15px;
+    width: 100%; padding: 16px; background: #4CAF50; color: white; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: margin-top: 15px;
   }
-  .save-name-btn {
+  .save-btn {
     background: #2196F3; color: white; border: none; border-radius: 12px; padding: 0 20px; font-size: 18px; font-weight: bold; cursor: pointer; white-space: nowrap;
   }
   
@@ -252,11 +252,18 @@
     <h2 style="margin-top: 40px;">⚙️ 系統後台設定</h2>
     
     <div class="setup-section">
-      <div class="form-group" style="margin-bottom: 0;">
+      <div class="form-group">
         <label>👤 使用者稱呼 (主畫面打招呼用)</label>
         <div style="display: flex; gap: 10px;">
           <input type="text" id="setting-user-name" placeholder="例如：爸爸、媽媽">
-          <button class="save-name-btn" onclick="saveUserName()">儲存</button>
+          <button class="save-btn" onclick="saveUserName()">儲存</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>🔐 系統管理密碼</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="setting-password" placeholder="例如：1234">
+          <button class="save-btn" onclick="savePassword()">儲存</button>
         </div>
       </div>
     </div>
@@ -341,6 +348,8 @@
   let showHistory = false;
   let userName = '先生/小姐';
   let historyFilterMode = 'all';
+  // 🌟 中文版的預設密碼也改為 1234
+  let systemPassword = '1234';
 
   function playDingSound() {
     try {
@@ -373,6 +382,11 @@
     document.getElementById('setting-user-name').value = userName;
     updateGreetingDisplay();
 
+    // 🌟 讀取自訂密碼
+    const storedPwd = localStorage.getItem('med_system_password');
+    if (storedPwd) systemPassword = storedPwd;
+    document.getElementById('setting-password').value = systemPassword;
+
     const storedMeds = localStorage.getItem('user_medications');
     if (storedMeds) {
       medications = JSON.parse(storedMeds);
@@ -389,7 +403,6 @@
     document.getElementById('main-greeting').innerText = `😊 ${userName} 你好！👋🏻`;
   }
 
-  document.getElementById('setting-user-name') && saveUserName;
   function saveUserName() {
     const newName = document.getElementById('setting-user-name').value.trim();
     if (!newName) { alert("名字不能空白喔！"); return; }
@@ -399,10 +412,20 @@
     alert(`✅ 稱呼已成功更新為「${userName}」！`);
   }
 
+  // 🌟 儲存新密碼的功能
+  function savePassword() {
+    const newPwd = document.getElementById('setting-password').value.trim();
+    if (!newPwd) { alert("密碼不能空白喔！"); return; }
+    systemPassword = newPwd;
+    localStorage.setItem('med_system_password', systemPassword);
+    alert(`✅ 系統管理密碼已成功更新！`);
+  }
+
   function toggleView(showSettings) {
     if (showSettings) {
       const pwd = prompt("🔐 進入後台請輸入密碼：");
-      if (pwd !== "8855") {
+      // 🌟 改為比對自訂密碼變數
+      if (pwd !== systemPassword) {
         if (pwd !== null) alert("❌ 密碼錯誤，無法進入設定喔！");
         return; 
       }
