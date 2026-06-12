@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吃藥打卡系統</title>
+<style>
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    text-align: center; 
+    padding: 20px; 
+    background-color: #f4f7f6; 
+  }
+  .container { 
+    max-width: 400px; 
+    margin: 0 auto; 
+    background: white; 
+    padding: 30px 20px; 
+    border-radius: 20px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+  }
+  h2 { color: #333; margin-bottom: 20px; }
+  
+  /* 藥品選項的圈圈 */
+  .med-options { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+  .med-btn { 
+    width: 70px; height: 70px; 
+    border-radius: 50%; 
+    border: 2px solid #ddd; 
+    background-color: white; 
+    font-size: 16px; 
+    cursor: pointer; 
+    transition: all 0.2s;
+  }
+  .med-btn.active { 
+    background-color: #4CAF50; 
+    color: white; 
+    border-color: #4CAF50; 
+  }
+
+  /* 頻率選項 */
+  .time-options { margin-bottom: 20px; }
+  .time-btn { 
+    padding: 10px 20px; 
+    margin: 0 5px; 
+    border-radius: 20px; 
+    border: 1px solid #ccc; 
+    background: white; 
+    cursor: pointer; 
+    font-size: 16px;
+  }
+  .time-btn.active { 
+    background-color: #2196F3; 
+    color: white; 
+    border-color: #2196F3; 
+  }
+
+  /* 紅色打卡大圈圈 */
+  .punch-btn { 
+    width: 160px; height: 160px; 
+    border-radius: 50%; 
+    background-color: #ff4d4d; 
+    color: white; 
+    font-size: 28px; 
+    font-weight: bold; 
+    border: none; 
+    cursor: pointer; 
+    margin: 20px 0; 
+    box-shadow: 0 8px 16px rgba(255, 77, 77, 0.4); 
+    transition: transform 0.1s;
+  }
+  .punch-btn:active { transform: scale(0.95); }
+
+  /* 狀態顯示區 */
+  #status { 
+    margin-top: 20px; 
+    font-size: 18px; 
+    color: #444; 
+    text-align: left; 
+    padding: 15px; 
+    background: #f0f8ff; 
+    border-radius: 12px; 
+    line-height: 1.6;
+  }
+  .alert { color: #d32f2f; font-weight: bold; }
+  .ok { color: #388e3c; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>💊 吃藥打卡小幫手</h2>
+
+  <div class="med-options" id="med-container">
+    <button class="med-btn active" onclick="selectMed('感冒藥')">感冒藥</button>
+    <button class="med-btn" onclick="selectMed('慢性藥')">慢性藥</button>
+    <button class="med-btn" onclick="selectMed('維他命')">維他命</button>
+  </div>
+
+  <div class="time-options" id="time-container">
+    <button class="time-btn active" onclick="selectInterval(4)">每 4 小時</button>
+    <button class="time-btn" onclick="selectInterval(6)">每 6 小時</button>
+    <button class="time-btn" onclick="selectInterval(12)">每 12 小時</button>
+  </div>
+
+  <button class="punch-btn" onclick="punchMedicine()">吃藥打卡</button>
+
+  <div id="status">
+    尚無打卡紀錄。
+  </div>
+</div>
+
+<script>
+  let currentMed = '感冒藥';
+  let currentInterval = 4; // 預設4小時
+
+  // 選擇藥品
+  function selectMed(medName) {
+    currentMed = medName;
+    document.querySelectorAll('.med-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if(btn.innerText === medName) btn.classList.add('active');
+    });
+    updateStatusDisplay();
+  }
+
+  // 選擇頻率
+  function selectInterval(hours) {
+    currentInterval = hours;
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if(btn.innerText.includes(hours)) btn.classList.add('active');
+    });
+    updateStatusDisplay();
+  }
+
+  // 按下打卡
+  function punchMedicine() {
+    const now = new Date();
+    const record = {
+      time: now.getTime(),
+      interval: currentInterval
+    };
+    // 儲存到瀏覽器
+    localStorage.setItem('med_' + currentMed, JSON.stringify(record));
+    updateStatusDisplay();
+  }
+
+  // 更新畫面狀態
+  function updateStatusDisplay() {
+    const recordStr = localStorage.getItem('med_' + currentMed);
+    const statusDiv = document.getElementById('status');
+
+    if (!recordStr) {
+      statusDiv.innerHTML = `【${currentMed}】<br>目前沒有打卡紀錄喔！`;
+      return;
+    }
+
+    const record = JSON.parse(recordStr);
+    const lastTakenTime = new Date(record.time);
+    
+    // 計算下次吃藥時間
+    const nextTime = new Date(record.time + record.interval * 60 * 60 * 1000);
+    const now = new Date();
+
+    let timeText = `上次吃藥：${lastTakenTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}<br>`;
+    timeText += `下次預計：${nextTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}<br><br>`;
+
+    // 檢查是否超時或太早吃
+    if (now >= nextTime) {
+      timeText += `<span class="alert">⚠️ 已經超過預計時間了，可以吃藥囉！</span>`;
+    } else {
+      timeText += `<span class="ok">✅ 時間還沒到，請稍候再吃。</span>`;
+    }
+
+    statusDiv.innerHTML = `【${currentMed}】<br>` + timeText;
+  }
+
+  // 網頁載入時先更新一次畫面
+  window.onload = updateStatusDisplay;
+  
+  // 每分鐘自動更新一次狀態檢查（避免網頁一直開著狀態沒變）
+  setInterval(updateStatusDisplay, 60000);
+</script>
+
+</body>
+</html>
