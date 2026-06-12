@@ -7,7 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>貼心吃藥打卡</title>
 <style>
-  /* 基礎設定，清除邊距並加入 iPhone 安全區域 */
   body { 
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
     text-align: center; 
@@ -15,7 +14,6 @@
     padding: 0;
     background-color: #f4f7f6; 
     color: #333;
-    /* 防止長按選取文字或連按兩下放大 */
     -webkit-user-select: none;
     user-select: none;
     touch-action: manipulation;
@@ -26,7 +24,6 @@
     min-height: 100vh;
     box-sizing: border-box;
     background: white; 
-    /* 配合 iPhone 瀏海與底部橫條的間距 */
     padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
     display: flex;
     flex-direction: column;
@@ -35,7 +32,6 @@
 
   h2 { margin-top: 20px; color: #222; font-size: 28px; font-weight: 800; }
   
-  /* 右上角設定按鈕 */
   .settings-toggle {
     position: absolute;
     top: max(20px, env(safe-area-inset-top));
@@ -50,7 +46,6 @@
     color: #333;
   }
 
-  /* 藥品選項圈圈 (放大版) */
   .med-options { 
     display: flex; 
     justify-content: center; 
@@ -79,7 +74,6 @@
     box-shadow: 0 6px 15px rgba(255, 152, 0, 0.3);
   }
 
-  /* 醫囑提示泡泡 */
   .notice-box {
     background-color: #fff8e1;
     border-left: 6px solid #ffb300;
@@ -91,7 +85,6 @@
   }
   .notice-title { font-weight: bold; color: #b78103; margin-bottom: 6px; }
 
-  /* 紅色打卡大圈圈 (極致放大，適合大螢幕盲按) */
   .punch-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; margin: 10px 0; }
   .punch-btn { 
     width: 220px; height: 220px; 
@@ -108,7 +101,6 @@
   }
   .punch-btn:active { transform: scale(0.92); background-color: #e60000; }
 
-  /* 狀態顯示區 */
   .status-box { 
     font-size: 20px; 
     text-align: left; 
@@ -121,7 +113,6 @@
   .alert { color: #d32f2f; font-weight: bold; display: block; margin-top: 10px; font-size: 22px; }
   .ok { color: #388e3c; font-weight: bold; display: block; margin-top: 10px; }
 
-  /* 歷史紀錄按鈕與區塊 */
   .history-toggle-btn {
     width: 100%; padding: 16px; background: #e3f2fd; color: #1e88e5; border: 2px dashed #1e88e5; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer;
   }
@@ -131,7 +122,6 @@
   .history-item { padding: 10px 0; border-bottom: 1px solid #eee; color: #444; }
   .history-item:last-child { border-bottom: none; }
 
-  /* 後台設定介面 */
   .hidden { display: none !important; }
   .setup-form { text-align: left; margin-top: 40px; }
   .form-group { margin-bottom: 20px; }
@@ -149,7 +139,14 @@
   }
   .delete-btn { background: #ff5252; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 
-  /* 彈出大視窗 (Modal) */
+  /* 教學重置區塊設計 */
+  .training-box {
+    margin-top: 30px; padding: 20px; background: #ffebee; border-radius: 16px; border: 2px dashed #ffcdd2; text-align: left;
+  }
+  .training-title { font-size: 20px; color: #c62828; font-weight: bold; margin-bottom: 10px; }
+  .training-desc { font-size: 16px; color: #555; margin-bottom: 15px; line-height: 1.5; }
+  .reset-btn { width: 100%; padding: 14px; background: #f44336; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.7);
@@ -229,21 +226,31 @@
           <option value="💧">💧 藥水</option>
         </select>
       </div>
+      
       <div class="form-group">
-        <label>間隔時間</label>
+        <label>吃藥頻率 / 每日次數</label>
         <select id="new-med-interval">
-          <option value="4">每 4 小時一次</option>
-          <option value="6">每 6 小時一次</option>
-          <option value="8">每 8 小時一次</option>
-          <option value="12">每 12 小時一次</option>
-          <option value="24">每 24 小時一次</option>
+          <option value="24">一天 1 次 (固定時間，間隔 24 小時)</option>
+          <option value="12">一天 2 次 (早晚，間隔 12 小時)</option>
+          <option value="5" selected>一天 3 次 (隨三餐，間隔約 5 小時)</option>
+          <option value="4">一天 4 次 (三餐+睡前，間隔約 4 小時)</option>
+          <option disabled>──────────────</option>
+          <option value="6">嚴格每 6 小時一次</option>
+          <option value="8">嚴格每 8 小時一次</option>
         </select>
       </div>
+      
       <div class="form-group">
         <label>備註事項</label>
-        <input type="text" id="new-med-notice" placeholder="例如：飯後吃">
+        <input type="text" id="new-med-notice" placeholder="例如：飯後吃、不可空腹">
       </div>
       <button class="action-btn" onclick="addMedication()">➕ 新增藥品</button>
+    </div>
+
+    <div class="training-box">
+      <div class="training-title">🛠️ 教學模式 / 重新開始</div>
+      <div class="training-desc">把手機交給長輩練習打卡，練習完畢後點擊下方按鈕，即可將目前選擇的藥品紀錄全部清空。</div>
+      <button class="reset-btn" onclick="clearTrainingData()">🧹 清除「當前藥品」打卡紀錄</button>
     </div>
 
     <div class="med-manager-list">
@@ -265,8 +272,8 @@
 
 <script>
   const defaultMedications = [
-    { name: '感冒藥', interval: 4, notice: '飯後服用，不可空腹吃。', icon: '💊' },
-    { name: '慢性藥', interval: 12, notice: '早晚各一次，請配溫開水。', icon: '🔴' }
+    { name: '感冒藥', interval: 5, notice: '一天吃3次，飯後服用，不可空腹。', icon: '💊' },
+    { name: '血壓藥', interval: 24, notice: '一天吃1次，每天早上固定吃。', icon: '🔴' }
   ];
 
   let medications = [];
@@ -310,8 +317,21 @@
     renderMainButtons(); renderManagerList(); updateStatusDisplay();
   }
 
+  // 🌟 加入密碼鎖機制的切換功能
   function toggleView(showSettings) {
     if (showSettings) {
+      // 彈出密碼輸入框
+      const pwd = prompt("🔐 進入後台請輸入密碼：");
+      
+      // 如果按了取消或密碼不對
+      if (pwd !== "8855") {
+        if (pwd !== null) { // 避免按取消也跳出警告
+          alert("❌ 密碼錯誤，無法進入設定喔！");
+        }
+        return; // 終止執行，不切換畫面
+      }
+      
+      // 密碼正確才切換
       document.getElementById('main-view').classList.add('hidden');
       document.getElementById('settings-view').classList.remove('hidden');
     } else {
@@ -333,6 +353,16 @@
     });
   }
 
+  function getFrequencyText(interval) {
+    if (interval === 24) return '一天 1 次';
+    if (interval === 12) return '一天 2 次 (早晚)';
+    if (interval === 5) return '一天 3 次 (隨三餐)';
+    if (interval === 4) return '一天 4 次 / 嚴格每 4 小時';
+    if (interval === 6) return '嚴格每 6 小時';
+    if (interval === 8) return '嚴格每 8 小時';
+    return `每 ${interval} 小時一次`;
+  }
+
   function renderManagerList() {
     const container = document.getElementById('manager-items-container');
     container.innerHTML = '';
@@ -341,7 +371,7 @@
       item.className = 'manager-item';
       item.innerHTML = `
         <div>
-          <strong>${med.icon || '💊'} ${med.name}</strong> (${med.interval}H)<br>
+          <strong>${med.icon || '💊'} ${med.name}</strong> (${getFrequencyText(med.interval)})<br>
           <span style="font-size:15px; color:#666;">📝 ${med.notice || '無備註'}</span>
         </div>
         <button class="delete-btn" onclick="deleteMedication(${index})">刪除</button>
@@ -376,6 +406,20 @@
       localStorage.setItem('user_medications', JSON.stringify(medications));
       if (currentMedName === removedName) currentMedName = medications.length > 0 ? medications[0].name : '';
       renderMainButtons(); renderManagerList();
+    }
+  }
+
+  // 🌟 新增的教學資料清除功能
+  function clearTrainingData() {
+    if (!currentMedName) {
+      alert("目前沒有選擇任何藥品喔！");
+      return;
+    }
+    if (confirm(`確定要清除【${currentMedName}】目前所有的打卡紀錄嗎？\n教學完畢後可以用這個按鈕重新開始。`)) {
+      localStorage.removeItem('med_history_arr_' + currentMedName);
+      alert(`✅ 已經清空【${currentMedName}】的所有紀錄，系統像新的一樣囉！`);
+      // 如果剛好開著歷史面板，會順便更新
+      if (showHistory) renderHistoryList();
     }
   }
 
@@ -469,7 +513,7 @@
     const now = new Date();
     
     let timeText = `⏱️ 上次吃藥：${lastPunchTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}<br>`;
-    timeText += `🔔 下次預計：${nextTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} (${currentMed.interval}小時後)<br>`;
+    timeText += `🔔 下次預計：${nextTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} (${getFrequencyText(currentMed.interval)}後)<br>`;
     
     if (now >= nextTime) {
       timeText += `<span class="alert">⚠️ 已經超過時間，可以吃藥囉！</span>`;
