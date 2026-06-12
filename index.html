@@ -2,176 +2,188 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>全方位貼心吃藥打卡系統</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>貼心吃藥打卡</title>
 <style>
+  /* 基礎設定，清除邊距並加入 iPhone 安全區域 */
   body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
     text-align: center; 
-    padding: 20px; 
+    margin: 0; 
+    padding: 0;
     background-color: #f4f7f6; 
     color: #333;
+    /* 防止長按選取文字或連按兩下放大 */
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
   }
+
   .container { 
-    max-width: 450px; 
-    margin: 0 auto; 
+    width: 100%; 
+    min-height: 100vh;
+    box-sizing: border-box;
     background: white; 
-    padding: 25px 20px; 
-    border-radius: 24px; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+    /* 配合 iPhone 瀏海與底部橫條的間距 */
+    padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 20px) 20px;
+    display: flex;
+    flex-direction: column;
     position: relative;
   }
-  h2 { margin-top: 10px; color: #222; font-size: 26px; }
+
+  h2 { margin-top: 20px; color: #222; font-size: 28px; font-weight: 800; }
   
   /* 右上角設定按鈕 */
   .settings-toggle {
     position: absolute;
-    top: 20px;
+    top: max(20px, env(safe-area-inset-top));
     right: 20px;
     background: #e0e0e0;
     border: none;
-    padding: 8px 12px;
-    border-radius: 15px;
+    padding: 10px 16px;
+    border-radius: 20px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 16px;
+    color: #333;
   }
 
-  /* 藥品選項圈圈 */
+  /* 藥品選項圈圈 (放大版) */
   .med-options { 
     display: flex; 
     justify-content: center; 
-    gap: 12px; 
-    margin: 20px 0; 
+    gap: 15px; 
+    margin: 25px 0; 
     flex-wrap: wrap;
   }
   .med-btn { 
-    padding: 12px 18px;
-    border-radius: 20px; 
+    padding: 14px 22px;
+    border-radius: 24px; 
     border: 2px solid #eee; 
     background-color: #fafafa; 
-    font-size: 18px; 
+    font-size: 20px; 
     font-weight: bold;
     cursor: pointer; 
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    color: #555;
   }
   .med-btn.active { 
     background-color: #ff9800; 
     color: white; 
     border-color: #ff9800; 
-    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+    box-shadow: 0 6px 15px rgba(255, 152, 0, 0.3);
   }
 
   /* 醫囑提示泡泡 */
   .notice-box {
     background-color: #fff8e1;
-    border-left: 5px solid #ffb300;
-    padding: 12px;
+    border-left: 6px solid #ffb300;
+    padding: 15px;
     margin: 15px 0;
-    border-radius: 8px;
+    border-radius: 12px;
     text-align: left;
-    font-size: 16px;
+    font-size: 18px;
   }
-  .notice-title { font-weight: bold; color: #b78103; margin-bottom: 4px; }
+  .notice-title { font-weight: bold; color: #b78103; margin-bottom: 6px; }
 
-  /* 紅色打卡大圈圈 */
+  /* 紅色打卡大圈圈 (極致放大，適合大螢幕盲按) */
+  .punch-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; margin: 10px 0; }
   .punch-btn { 
-    width: 170px; height: 170px; 
+    width: 220px; height: 220px; 
     border-radius: 50%; 
     background-color: #ff4d4d; 
     color: white; 
-    font-size: 30px; 
-    font-weight: bold; 
+    font-size: 38px; 
+    font-weight: 900; 
     border: none; 
     cursor: pointer; 
-    margin: 20px 0; 
-    box-shadow: 0 8px 20px rgba(255, 77, 77, 0.4); 
+    box-shadow: 0 12px 30px rgba(255, 77, 77, 0.4); 
     transition: transform 0.1s;
+    display: flex; justify-content: center; align-items: center;
   }
-  .punch-btn:active { transform: scale(0.95); }
+  .punch-btn:active { transform: scale(0.92); background-color: #e60000; }
 
   /* 狀態顯示區 */
   .status-box { 
-    margin-top: 15px; 
-    font-size: 18px; 
+    font-size: 20px; 
     text-align: left; 
-    padding: 15px; 
+    padding: 20px; 
     background: #f0f4f8; 
-    border-radius: 16px; 
+    border-radius: 20px; 
     line-height: 1.6;
+    margin-bottom: 20px;
   }
-  .alert { color: #d32f2f; font-weight: bold; display: block; margin-top: 8px; }
-  .ok { color: #388e3c; font-weight: bold; display: block; margin-top: 8px; }
+  .alert { color: #d32f2f; font-weight: bold; display: block; margin-top: 10px; font-size: 22px; }
+  .ok { color: #388e3c; font-weight: bold; display: block; margin-top: 10px; }
 
   /* 歷史紀錄按鈕與區塊 */
-  .history-section { margin-top: 20px; }
   .history-toggle-btn {
-    width: 100%; padding: 12px; background: #e3f2fd; color: #1e88e5; border: 1px dashed #1e88e5; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;
+    width: 100%; padding: 16px; background: #e3f2fd; color: #1e88e5; border: 2px dashed #1e88e5; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer;
   }
   .history-log-box {
-    margin-top: 10px; background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 12px; text-align: left; max-height: 200px; overflow-y: auto;
+    margin-top: 15px; background: #fafafa; border: 1px solid #eee; border-radius: 16px; padding: 15px; text-align: left; max-height: 250px; overflow-y: auto; font-size: 18px;
   }
-  .history-item { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 15px; color: #555; }
+  .history-item { padding: 10px 0; border-bottom: 1px solid #eee; color: #444; }
   .history-item:last-child { border-bottom: none; }
 
   /* 後台設定介面 */
   .hidden { display: none !important; }
-  .setup-form { text-align: left; margin-top: 20px; }
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 16px; }
+  .setup-form { text-align: left; margin-top: 40px; }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 18px; }
   .form-group input, .form-group select { 
-    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box;
+    width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #ccc; font-size: 18px; box-sizing: border-box; background: #fff;
   }
   .action-btn {
-    width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px;
+    width: 100%; padding: 16px; background: #4CAF50; color: white; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 15px;
   }
   
-  /* 後台藥品列表管理 */
-  .med-manager-list { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; text-align: left; }
+  .med-manager-list { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; text-align: left; }
   .manager-item { 
-    display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f9f9f9; border-radius: 12px; margin-bottom: 12px; font-size: 18px;
   }
-  .delete-btn { background: #ff5252; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+  .delete-btn { background: #ff5252; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 
-  /* 彈出大視窗 (Modal) 的樣式 */
+  /* 彈出大視窗 (Modal) */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     display: flex; justify-content: center; align-items: center;
     z-index: 1000;
   }
   .modal-content {
-    background: white; padding: 30px 25px; border-radius: 24px;
-    text-align: center; width: 85%; max-width: 350px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    animation: popIn 0.3s ease-out;
+    background: white; padding: 40px 25px; border-radius: 30px;
+    text-align: center; width: 85%; max-width: 400px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
   @keyframes popIn {
     from { transform: scale(0.8); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
-  .modal-title { font-size: 26px; color: #4CAF50; font-weight: bold; margin-bottom: 12px; }
-  .modal-subtitle { font-size: 20px; color: #555; margin-bottom: 8px; }
-  .modal-time { font-size: 55px; color: #ff4d4d; font-weight: bold; margin-bottom: 20px; line-height: 1.1; }
+  .modal-title { font-size: 32px; color: #4CAF50; font-weight: 900; margin-bottom: 15px; }
+  .modal-subtitle { font-size: 22px; color: #555; margin-bottom: 10px; }
+  .modal-time { font-size: 65px; color: #ff4d4d; font-weight: 900; margin-bottom: 30px; line-height: 1; }
   .close-modal-btn {
-    background: #2196F3; color: white; border: none; padding: 14px;
-    font-size: 20px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; margin-bottom: 10px;
+    background: #2196F3; color: white; border: none; padding: 18px;
+    font-size: 24px; font-weight: bold; border-radius: 16px; cursor: pointer; width: 100%; margin-bottom: 15px;
   }
   .undo-modal-btn {
-    background: #9e9e9e; color: white; border: none; padding: 10px;
-    font-size: 16px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%;
+    background: #e0e0e0; color: #555; border: none; padding: 14px;
+    font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%;
   }
 </style>
 </head>
 <body>
 
 <div class="container">
-  
-  <div id="main-view">
-    <button class="settings-toggle" onclick="toggleView(true)">⚙️ 設定藥品</button>
+  <div id="main-view" style="display:flex; flex-direction:column; height:100%;">
+    <button class="settings-toggle" onclick="toggleView(true)">⚙️ 設定</button>
     <h2>💊 吃藥打卡小幫手</h2>
 
     <div class="med-options" id="med-buttons-container"></div>
@@ -181,14 +193,16 @@
       <div id="med-notice">尚無注意事項</div>
     </div>
 
-    <button class="punch-btn" onclick="punchMedicine()">吃藥打卡</button>
+    <div class="punch-container">
+      <button class="punch-btn" onclick="punchMedicine()">吃藥打卡</button>
+    </div>
 
     <div class="status-box" id="status-container">
       尚無打卡紀錄。
     </div>
 
-    <div class="history-section">
-      <button class="history-toggle-btn" onclick="toggleHistoryZone()">📊 查看最近 3 天吃藥紀錄 (展開/收合)</button>
+    <div>
+      <button class="history-toggle-btn" onclick="toggleHistoryZone()">📊 查看最近 3 天紀錄</button>
       <div id="history-log-box" class="history-log-box hidden">
         <div id="history-list-items">暫無紀錄</div>
       </div>
@@ -196,62 +210,60 @@
   </div>
 
   <div id="settings-view" class="hidden">
-    <button class="settings-toggle" onclick="toggleView(false)">⬅️ 返回打卡</button>
+    <button class="settings-toggle" onclick="toggleView(false)">⬅️ 返回</button>
     <h2>⚙️ 藥品後台設定</h2>
     
     <div class="setup-form">
       <div class="form-group">
         <label>藥品名稱</label>
-        <input type="text" id="new-med-name" placeholder="例如：降血壓藥、維他命">
+        <input type="text" id="new-med-name" placeholder="例如：降血壓藥">
       </div>
       <div class="form-group">
-        <label>藥丸外觀標籤 (方便長輩辨識)</label>
+        <label>藥丸標籤</label>
         <select id="new-med-icon">
           <option value="💊">💊 膠囊</option>
-          <option value="🔴">🔴 紅色小圓藥</option>
-          <option value="🟡">🟡 黃色小圓藥</option>
-          <option value="⚪">⚪ 白色大圓片</option>
-          <option value="🟩">🟩 綠色方形片</option>
-          <option value="💧">💧 藥水/眼藥水</option>
+          <option value="🔴">🔴 紅色圓藥</option>
+          <option value="🟡">🟡 黃色圓藥</option>
+          <option value="⚪">⚪ 白色圓片</option>
+          <option value="🟩">🟩 綠色方片</option>
+          <option value="💧">💧 藥水</option>
         </select>
       </div>
       <div class="form-group">
-        <label>吃藥間隔時間</label>
+        <label>間隔時間</label>
         <select id="new-med-interval">
-          <option value="4">每 4 小時吃一次</option>
-          <option value="6">每 6 小時吃一次</option>
-          <option value="8">每 8 小時吃一次</option>
-          <option value="12">每 12 小時吃一次</option>
-          <option value="24">每 24 小時吃一次</option>
+          <option value="4">每 4 小時一次</option>
+          <option value="6">每 6 小時一次</option>
+          <option value="8">每 8 小時一次</option>
+          <option value="12">每 12 小時一次</option>
+          <option value="24">每 24 小時一次</option>
         </select>
       </div>
       <div class="form-group">
-        <label>醫囑 / 備註事項</label>
-        <input type="text" id="new-med-notice" placeholder="例如：飯後吃、不可空腹">
+        <label>備註事項</label>
+        <input type="text" id="new-med-notice" placeholder="例如：飯後吃">
       </div>
-      <button class="action-btn" onclick="addMedication()">➕ 新增至清單</button>
+      <button class="action-btn" onclick="addMedication()">➕ 新增藥品</button>
     </div>
 
     <div class="med-manager-list">
-      <h3 style="margin-bottom: 10px; font-size: 18px;">目前追蹤中的藥品：</h3>
+      <h3 style="margin-bottom: 15px; font-size: 20px;">追蹤中的藥品：</h3>
       <div id="manager-items-container"></div>
     </div>
   </div>
-
 </div>
 
 <div id="punch-modal" class="modal-overlay hidden">
   <div class="modal-content">
     <div class="modal-title">✅ 打卡成功！</div>
-    <div class="modal-subtitle">下一次吃藥時間是：</div>
+    <div class="modal-subtitle">下一次吃藥時間：</div>
     <div class="modal-time" id="modal-next-time">18:00</div>
     <button class="close-modal-btn" onclick="closeModal()">我知道了</button>
-    <button class="undo-modal-btn" onclick="undoLastPunch()">❌ 不小心按錯了（取消）</button>
+    <button class="undo-modal-btn" onclick="undoLastPunch()">❌ 按錯了（取消）</button>
   </div>
 </div>
 
 <script>
-  // 預設藥品資料 (新增外觀標籤 icon 欄位)
   const defaultMedications = [
     { name: '感冒藥', interval: 4, notice: '飯後服用，不可空腹吃。', icon: '💊' },
     { name: '慢性藥', interval: 12, notice: '早晚各一次，請配溫開水。', icon: '🔴' }
@@ -261,41 +273,29 @@
   let currentMedName = '';
   let showHistory = false;
 
-  // 100% 穩定的內建瀏覽器音效合成器 (免音訊檔發出「叮咚」聲)
   function playDingSound() {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
-      
-      // 第一聲：高音
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(880, ctx.currentTime); // A5 音
+      osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime);
       gain1.gain.setValueAtTime(0.1, ctx.currentTime);
       gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.start();
-      osc1.stop(ctx.currentTime + 0.15);
+      osc1.connect(gain1); gain1.connect(ctx.destination);
+      osc1.start(); osc1.stop(ctx.currentTime + 0.15);
 
-      // 第二聲：更高音，稍微延遲一點點
       setTimeout(() => {
         const osc2 = ctx.createOscillator();
         const gain2 = ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1318.5, ctx.currentTime); // E6 音
+        osc2.type = 'sine'; osc2.frequency.setValueAtTime(1318.5, ctx.currentTime);
         gain2.gain.setValueAtTime(0.1, ctx.currentTime);
         gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.start();
-        osc2.stop(ctx.currentTime + 0.3);
+        osc2.connect(gain2); gain2.connect(ctx.destination);
+        osc2.start(); osc2.stop(ctx.currentTime + 0.3);
       }, 100);
-    } catch (e) {
-      console.log("音訊暫不支援", e);
-    }
+    } catch (e) { console.log(e); }
   }
 
   function initSystem() {
@@ -306,14 +306,8 @@
       medications = defaultMedications;
       localStorage.setItem('user_medications', JSON.stringify(medications));
     }
-    
-    if (medications.length > 0 && !currentMedName) {
-      currentMedName = medications[0].name;
-    }
-    
-    renderMainButtons();
-    renderManagerList();
-    updateStatusDisplay();
+    if (medications.length > 0 && !currentMedName) currentMedName = medications[0].name;
+    renderMainButtons(); renderManagerList(); updateStatusDisplay();
   }
 
   function toggleView(showSettings) {
@@ -330,11 +324,9 @@
   function renderMainButtons() {
     const container = document.getElementById('med-buttons-container');
     container.innerHTML = '';
-    
     medications.forEach(med => {
       const btn = document.createElement('button');
       btn.className = `med-btn ${med.name === currentMedName ? 'active' : ''}`;
-      // 將視覺標籤圖案與藥名結合
       btn.innerHTML = `<span>${med.icon || '💊'}</span> ${med.name}`;
       btn.onclick = () => selectMed(med.name);
       container.appendChild(btn);
@@ -344,14 +336,13 @@
   function renderManagerList() {
     const container = document.getElementById('manager-items-container');
     container.innerHTML = '';
-    
     medications.forEach((med, index) => {
       const item = document.createElement('div');
       item.className = 'manager-item';
       item.innerHTML = `
         <div>
-          <strong>${med.icon || '💊'} ${med.name}</strong> (${med.interval}小時/次)<br>
-          <span style="font-size:14px; color:#666;">📝 ${med.notice || '無備註'}</span>
+          <strong>${med.icon || '💊'} ${med.name}</strong> (${med.interval}H)<br>
+          <span style="font-size:15px; color:#666;">📝 ${med.notice || '無備註'}</span>
         </div>
         <button class="delete-btn" onclick="deleteMedication(${index})">刪除</button>
       `;
@@ -364,33 +355,26 @@
     const iconSelect = document.getElementById('new-med-icon');
     const intervalSelect = document.getElementById('new-med-interval');
     const noticeInput = document.getElementById('new-med-notice');
-    
-    const name = nameInput.value.trim();
-    const icon = iconSelect.value;
-    const interval = parseInt(intervalSelect.value);
-    const notice = noticeInput.value.trim();
+    const name = nameInput.value.trim(); const icon = iconSelect.value;
+    const interval = parseInt(intervalSelect.value); const notice = noticeInput.value.trim();
     
     if (!name) { alert('請輸入藥品名稱喔！'); return; }
-    if (medications.some(m => m.name === name)) { alert('這個藥品名稱已經存在囉！'); return; }
+    if (medications.some(m => m.name === name)) { alert('名稱已存在囉！'); return; }
     
     medications.push({ name, interval, notice, icon });
     localStorage.setItem('user_medications', JSON.stringify(medications));
-    
-    nameInput.value = ''; noticeInput.value = '';
-    currentMedName = name; 
+    nameInput.value = ''; noticeInput.value = ''; currentMedName = name; 
     renderMainButtons(); renderManagerList();
     alert(`成功新增「${name}」！`);
   }
 
   function deleteMedication(index) {
     const removedName = medications[index].name;
-    if (confirm(`確定要刪除「${removedName}」嗎？相關的打卡紀錄也會不見喔。`)) {
+    if (confirm(`確定要刪除「${removedName}」嗎？紀錄也會不見喔。`)) {
       localStorage.removeItem('med_history_arr_' + removedName);
       medications.splice(index, 1);
       localStorage.setItem('user_medications', JSON.stringify(medications));
-      if (currentMedName === removedName) {
-        currentMedName = medications.length > 0 ? medications[0].name : '';
-      }
+      if (currentMedName === removedName) currentMedName = medications.length > 0 ? medications[0].name : '';
       renderMainButtons(); renderManagerList();
     }
   }
@@ -399,131 +383,85 @@
     currentMedName = medName;
     document.querySelectorAll('.med-btn').forEach(btn => {
       btn.classList.remove('active');
-      // 用 textContent 包含檢查
       if (btn.textContent.includes(medName)) btn.classList.add('active');
     });
     updateStatusDisplay();
   }
 
-  // 🌟 吃藥打卡按鈕邏輯
   function punchMedicine() {
     if (!currentMedName) { alert('請先到後台新增藥品喔！'); return; }
-    
-    // 🔊 播清脆的叮咚聲音回饋
     playDingSound();
     
-    const now = new Date();
-    const timestamp = now.getTime();
-    
-    // 改用陣列儲存所有歷史紀錄
+    const now = new Date(); const timestamp = now.getTime();
     let historyArr = [];
     const savedHistory = localStorage.getItem('med_history_arr_' + currentMedName);
-    if (savedHistory) {
-      historyArr = JSON.parse(savedHistory);
-    }
+    if (savedHistory) historyArr = JSON.parse(savedHistory);
     
     historyArr.push(timestamp);
     localStorage.setItem('med_history_arr_' + currentMedName, JSON.stringify(historyArr));
     
-    // 計算下次吃藥時間
     const currentMed = medications.find(m => m.name === currentMedName);
     const nextTime = new Date(timestamp + currentMed.interval * 60 * 60 * 1000);
-    const timeString = nextTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    
-    document.getElementById('modal-next-time').innerText = timeString;
+    document.getElementById('modal-next-time').innerText = nextTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     document.getElementById('punch-modal').classList.remove('hidden');
-    
     updateStatusDisplay();
   }
 
-  // ↩️ 防呆取消功能：移除最後一筆剛按下的紀錄
   function undoLastPunch() {
     const savedHistory = localStorage.getItem('med_history_arr_' + currentMedName);
     if (savedHistory) {
       let historyArr = JSON.parse(savedHistory);
       if (historyArr.length > 0) {
-        historyArr.pop(); // 移除最新那筆
+        historyArr.pop();
         localStorage.setItem('med_history_arr_' + currentMedName, JSON.stringify(historyArr));
       }
     }
-    closeModal();
-    updateStatusDisplay();
-    alert('已成功撤銷剛剛的打卡紀錄！');
+    closeModal(); updateStatusDisplay();
+    alert('已成功撤銷剛剛的打卡！');
   }
 
-  function closeModal() {
-    document.getElementById('punch-modal').classList.add('hidden');
-  }
+  function closeModal() { document.getElementById('punch-modal').classList.add('hidden'); }
 
-  // 控制歷史紀錄展開/收合
   function toggleHistoryZone() {
     showHistory = !showHistory;
     const box = document.getElementById('history-log-box');
-    if (showHistory) {
-      box.classList.remove('hidden');
-      renderHistoryList();
-    } else {
-      box.classList.add('hidden');
-    }
+    if (showHistory) { box.classList.remove('hidden'); renderHistoryList(); } 
+    else { box.classList.add('hidden'); }
   }
 
-  // 🕒 算出並渲染最近 3 天的歷史紀錄
   function renderHistoryList() {
     const itemsContainer = document.getElementById('history-list-items');
-    if (!currentMedName) {
-      itemsContainer.innerHTML = '暫無藥品資料';
-      return;
-    }
-
+    if (!currentMedName) { itemsContainer.innerHTML = '暫無資料'; return; }
     const savedHistory = localStorage.getItem('med_history_arr_' + currentMedName);
-    if (!savedHistory) {
-      itemsContainer.innerHTML = '沒有這三天的吃藥紀錄喔。';
-      return;
-    }
+    if (!savedHistory) { itemsContainer.innerHTML = '這三天沒有紀錄喔。'; return; }
 
     let historyArr = JSON.parse(savedHistory);
-    const nowMs = new Date().getTime();
-    const threeDaysMs = 3 * 24 * 60 * 60 * 1000; // 3天的毫秒數
+    const nowMs = new Date().getTime(); const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    let recentPunches = historyArr.filter(ts => (nowMs - ts) <= threeDaysMs).sort((a, b) => b - a);
 
-    // 篩選出最近 3 天 (72小時內) 的紀錄，並且由新到舊排序
-    let recentPunches = historyArr
-      .filter(ts => (nowMs - ts) <= threeDaysMs)
-      .sort((a, b) => b - a);
-
-    if (recentPunches.length === 0) {
-      itemsContainer.innerHTML = '最近 3 天沒有吃藥打卡紀錄。';
-      return;
-    }
-
+    if (recentPunches.length === 0) { itemsContainer.innerHTML = '最近 3 天沒有紀錄。'; return; }
     itemsContainer.innerHTML = recentPunches.map(ts => {
       const d = new Date(ts);
-      const dateStr = d.toLocaleDateString([], {month: '2-digit', day: '2-digit'});
-      const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-      return `<div class="history-item">🗓️ ${dateStr} 於 ${timeStr} 已服用</div>`;
+      return `<div class="history-item">🗓️ ${d.toLocaleDateString([], {month: '2-digit', day: '2-digit'})} 於 ${d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} 服用</div>`;
     }).join('');
   }
 
   function updateStatusDisplay() {
     const noticeDiv = document.getElementById('med-notice');
     const statusDiv = document.getElementById('status-container');
-    
     if (!currentMedName) {
-      noticeDiv.innerText = '請先點擊右上角新增藥品項目。';
-      statusDiv.innerHTML = '目前無藥品資料。';
-      return;
+      noticeDiv.innerText = '請先新增藥品。'; statusDiv.innerHTML = '無藥品資料。'; return;
     }
     
     const currentMed = medications.find(m => m.name === currentMedName);
     noticeDiv.innerText = currentMed.notice ? currentMed.notice : '無特別注意事項。';
     
-    // 讀取歷史陣列的最後一筆當作上次打卡時間
     const savedHistory = localStorage.getItem('med_history_arr_' + currentMedName);
     let historyArr = savedHistory ? JSON.parse(savedHistory) : [];
     
     if (historyArr.length === 0) {
-      statusDiv.innerHTML = `<strong>【${currentMed.icon || '💊'} ${currentMedName}】</strong><br>目前沒有打卡紀錄喔！`;
-      if(showHistory) renderHistoryList();
-      return;
+      statusDiv.innerHTML = `<strong>【${currentMed.icon || '💊'} ${currentMedName}】</strong><br>目前沒有紀錄喔！`;
+      if(showHistory) renderHistoryList(); return;
     }
     
     const lastPunchTime = new Date(historyArr[historyArr.length - 1]);
@@ -534,28 +472,20 @@
     timeText += `🔔 下次預計：${nextTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} (${currentMed.interval}小時後)<br>`;
     
     if (now >= nextTime) {
-      timeText += `<span class="alert">⚠️ 已經超過設定時間了，可以吃藥囉！</span>`;
+      timeText += `<span class="alert">⚠️ 已經超過時間，可以吃藥囉！</span>`;
     } else {
-      const diffMs = nextTime - now;
-      const diffMins = Math.ceil(diffMs / (1000 * 60));
+      const diffMins = Math.ceil((nextTime - now) / (1000 * 60));
       if (diffMins > 60) {
-        const diffHours = Math.floor(diffMins / 60);
-        const remMins = diffMins % 60;
-        timeText += `<span class="ok">✅ 時間還沒到，再過 ${diffHours} 小時 ${remMins} 分鐘才可以吃。</span>`;
+        timeText += `<span class="ok">✅ 再過 ${Math.floor(diffMins / 60)} 小時 ${diffMins % 60} 分鐘才可以吃。</span>`;
       } else {
-        timeText += `<span class="ok">✅ 時間還沒到，再過 ${diffMins} 分鐘才可以吃。</span>`;
+        timeText += `<span class="ok">✅ 再過 ${diffMins} 分鐘才可以吃。</span>`;
       }
     }
-    
     statusDiv.innerHTML = `<strong>【${currentMed.icon || '💊'} ${currentMedName}】</strong><br>` + timeText;
-    
-    // 如果歷史區塊開著，順便更新歷史清單
     if (showHistory) renderHistoryList();
   }
 
-  window.onload = initSystem;
-  setInterval(updateStatusDisplay, 60000);
+  window.onload = initSystem; setInterval(updateStatusDisplay, 60000);
 </script>
-
 </body>
 </html>
