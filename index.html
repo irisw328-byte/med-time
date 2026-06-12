@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>貼心吃藥打卡</title>
+<meta name="apple-mobile-web-app-title" content="藥">
+<title>藥</title>
 <style>
   body { 
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
@@ -338,7 +339,6 @@
   let medications = [];
   let currentMedName = '';
   let showHistory = false;
-  // 改為通用的預設名字
   let userName = '先生/小姐';
   let historyFilterMode = 'all';
 
@@ -386,7 +386,6 @@
   }
 
   function updateGreetingDisplay() {
-    // 固定加上表情符號，名字從變數帶入
     document.getElementById('main-greeting').innerText = `😊 ${userName} 你好！👋🏻`;
   }
 
