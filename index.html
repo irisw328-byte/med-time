@@ -30,8 +30,15 @@
     position: relative;
   }
 
-  h2 { margin-top: 20px; color: #222; font-size: 28px; font-weight: 800; }
+  h2 { margin-top: 20px; color: #222; font-size: 28px; font-weight: 800; margin-bottom: 5px; }
   
+  .greeting-text {
+    font-size: 24px;
+    color: #e65100;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
   .settings-toggle {
     position: absolute;
     top: max(20px, env(safe-area-inset-top));
@@ -50,7 +57,7 @@
     display: flex; 
     justify-content: center; 
     gap: 15px; 
-    margin: 25px 0; 
+    margin: 15px 0 25px 0; 
     flex-wrap: wrap;
   }
   .med-btn { 
@@ -123,6 +130,8 @@
   .history-item:last-child { border-bottom: none; }
 
   .hidden { display: none !important; }
+  
+  .setup-section { margin-top: 20px; padding-bottom: 25px; border-bottom: 2px dashed #eee; text-align: left; }
   .setup-form { text-align: left; margin-top: 40px; }
   .form-group { margin-bottom: 20px; }
   .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 18px; }
@@ -132,6 +141,9 @@
   .action-btn {
     width: 100%; padding: 16px; background: #4CAF50; color: white; border: none; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 15px;
   }
+  .save-name-btn {
+    background: #2196F3; color: white; border: none; border-radius: 12px; padding: 0 20px; font-size: 18px; font-weight: bold; cursor: pointer; white-space: nowrap;
+  }
   
   .med-manager-list { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; text-align: left; }
   .manager-item { 
@@ -139,7 +151,6 @@
   }
   .delete-btn { background: #ff5252; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 
-  /* 教學重置區塊設計 */
   .training-box {
     margin-top: 30px; padding: 20px; background: #ffebee; border-radius: 16px; border: 2px dashed #ffcdd2; text-align: left;
   }
@@ -181,7 +192,9 @@
 <div class="container">
   <div id="main-view" style="display:flex; flex-direction:column; height:100%;">
     <button class="settings-toggle" onclick="toggleView(true)">⚙️ 設定</button>
+    
     <h2>💊 吃藥打卡小幫手</h2>
+    <div class="greeting-text" id="main-greeting">☀️ 坤山 你好！</div>
 
     <div class="med-options" id="med-buttons-container"></div>
 
@@ -208,9 +221,20 @@
 
   <div id="settings-view" class="hidden">
     <button class="settings-toggle" onclick="toggleView(false)">⬅️ 返回</button>
-    <h2>⚙️ 藥品後台設定</h2>
+    <h2 style="margin-top: 40px;">⚙️ 系統後台設定</h2>
+    
+    <div class="setup-section">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label>👤 使用者稱呼 (主畫面打招呼用)</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="setting-user-name" placeholder="例如：坤山">
+          <button class="save-name-btn" onclick="saveUserName()">儲存</button>
+        </div>
+      </div>
+    </div>
     
     <div class="setup-form">
+      <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 20px;">➕ 新增追蹤藥品</h3>
       <div class="form-group">
         <label>藥品名稱</label>
         <input type="text" id="new-med-name" placeholder="例如：降血壓藥">
@@ -230,13 +254,15 @@
       <div class="form-group">
         <label>吃藥頻率 / 每日次數</label>
         <select id="new-med-interval">
-          <option value="24">一天 1 次 (固定時間，間隔 24 小時)</option>
-          <option value="12">一天 2 次 (早晚，間隔 12 小時)</option>
-          <option value="5" selected>一天 3 次 (隨三餐，間隔約 5 小時)</option>
-          <option value="4">一天 4 次 (三餐+睡前，間隔約 4 小時)</option>
+          <option value="24">一天吃 1 次 (固定時間，間隔 24 小時)</option>
+          <option value="12">一天吃 2 次 (早晚，間隔 12 小時)</option>
+          <option value="5" selected>一天吃 3 次 (隨三餐，間隔 5 小時)</option>
+          <option value="4">一天吃 4 次 (三餐+睡前，間隔 4 小時)</option>
           <option disabled>──────────────</option>
-          <option value="6">嚴格每 6 小時一次</option>
-          <option value="8">嚴格每 8 小時一次</option>
+          <option value="4">每 4 小時吃一次 (嚴格時效藥)</option>
+          <option value="5">每 5 小時吃一次</option>
+          <option value="6">每 6 小時吃一次</option>
+          <option value="8">每 8 小時吃一次</option>
         </select>
       </div>
       
@@ -244,7 +270,7 @@
         <label>備註事項</label>
         <input type="text" id="new-med-notice" placeholder="例如：飯後吃、不可空腹">
       </div>
-      <button class="action-btn" onclick="addMedication()">➕ 新增藥品</button>
+      <button class="action-btn" onclick="addMedication()">新增藥品</button>
     </div>
 
     <div class="training-box">
@@ -254,7 +280,7 @@
     </div>
 
     <div class="med-manager-list">
-      <h3 style="margin-bottom: 15px; font-size: 20px;">追蹤中的藥品：</h3>
+      <h3 style="margin-bottom: 15px; font-size: 20px;">追蹤中的藥品清單：</h3>
       <div id="manager-items-container"></div>
     </div>
   </div>
@@ -279,6 +305,7 @@
   let medications = [];
   let currentMedName = '';
   let showHistory = false;
+  let userName = '坤山';
 
   function playDingSound() {
     try {
@@ -306,32 +333,44 @@
   }
 
   function initSystem() {
-    const stored = localStorage.getItem('user_medications');
-    if (stored) {
-      medications = JSON.parse(stored);
+    const storedName = localStorage.getItem('med_user_name');
+    if (storedName) userName = storedName;
+    document.getElementById('setting-user-name').value = userName;
+    updateGreetingDisplay();
+
+    const storedMeds = localStorage.getItem('user_medications');
+    if (storedMeds) {
+      medications = JSON.parse(storedMeds);
     } else {
       medications = defaultMedications;
       localStorage.setItem('user_medications', JSON.stringify(medications));
     }
     if (medications.length > 0 && !currentMedName) currentMedName = medications[0].name;
+    
     renderMainButtons(); renderManagerList(); updateStatusDisplay();
   }
 
-  // 🌟 加入密碼鎖機制的切換功能
+  function updateGreetingDisplay() {
+    document.getElementById('main-greeting').innerText = `☀️ ${userName} 你好！`;
+  }
+
+  document.getElementById('setting-user-name') && saveUserName;
+  function saveUserName() {
+    const newName = document.getElementById('setting-user-name').value.trim();
+    if (!newName) { alert("名字不能空白喔！"); return; }
+    userName = newName;
+    localStorage.setItem('med_user_name', userName);
+    updateGreetingDisplay();
+    alert(`✅ 稱呼已成功更新為「${userName}」！`);
+  }
+
   function toggleView(showSettings) {
     if (showSettings) {
-      // 彈出密碼輸入框
       const pwd = prompt("🔐 進入後台請輸入密碼：");
-      
-      // 如果按了取消或密碼不對
       if (pwd !== "8855") {
-        if (pwd !== null) { // 避免按取消也跳出警告
-          alert("❌ 密碼錯誤，無法進入設定喔！");
-        }
-        return; // 終止執行，不切換畫面
+        if (pwd !== null) alert("❌ 密碼錯誤，無法進入設定喔！");
+        return; 
       }
-      
-      // 密碼正確才切換
       document.getElementById('main-view').classList.add('hidden');
       document.getElementById('settings-view').classList.remove('hidden');
     } else {
@@ -353,13 +392,14 @@
     });
   }
 
+  // 🌟 更新顯示轉換，完美匹配後台新增的項目
   function getFrequencyText(interval) {
-    if (interval === 24) return '一天 1 次';
-    if (interval === 12) return '一天 2 次 (早晚)';
-    if (interval === 5) return '一天 3 次 (隨三餐)';
-    if (interval === 4) return '一天 4 次 / 嚴格每 4 小時';
-    if (interval === 6) return '嚴格每 6 小時';
-    if (interval === 8) return '嚴格每 8 小時';
+    if (interval === 24) return '一天 1 次 (24小時)';
+    if (interval === 12) return '一天 2 次 (12小時)';
+    if (interval === 5) return '每 5 小時一次 / 一天 3 次';
+    if (interval === 4) return '每 4 小時一次 / 一天 4 次';
+    if (interval === 6) return '每 6 小時一次';
+    if (interval === 8) return '每 8 小時一次';
     return `每 ${interval} 小時一次`;
   }
 
@@ -409,16 +449,11 @@
     }
   }
 
-  // 🌟 新增的教學資料清除功能
   function clearTrainingData() {
-    if (!currentMedName) {
-      alert("目前沒有選擇任何藥品喔！");
-      return;
-    }
+    if (!currentMedName) { alert("目前沒有選擇任何藥品喔！"); return; }
     if (confirm(`確定要清除【${currentMedName}】目前所有的打卡紀錄嗎？\n教學完畢後可以用這個按鈕重新開始。`)) {
       localStorage.removeItem('med_history_arr_' + currentMedName);
       alert(`✅ 已經清空【${currentMedName}】的所有紀錄，系統像新的一樣囉！`);
-      // 如果剛好開著歷史面板，會順便更新
       if (showHistory) renderHistoryList();
     }
   }
