@@ -128,7 +128,6 @@
     margin-top: 15px; background: #fafafa; border: 1px solid #eee; border-radius: 16px; padding: 15px; text-align: left; font-size: 18px;
   }
   
-  /* 🌟 新增的濾鏡按鈕設計 */
   .history-filter {
     display: flex; gap: 10px; margin-bottom: 15px;
   }
@@ -169,8 +168,16 @@
   }
   .delete-btn { background: #ff5252; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 
+  /* 🌟 匯出列印區塊設計 */
+  .export-box {
+    margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 16px; border: 2px dashed #90caf9; text-align: left;
+  }
+  .export-title { font-size: 20px; color: #1565c0; font-weight: bold; margin-bottom: 10px; }
+  .export-desc { font-size: 16px; color: #555; margin-bottom: 15px; line-height: 1.5; }
+  .export-btn { width: 100%; padding: 14px; background: #1976D2; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; }
+
   .training-box {
-    margin-top: 30px; padding: 20px; background: #ffebee; border-radius: 16px; border: 2px dashed #ffcdd2; text-align: left;
+    margin-top: 20px; padding: 20px; background: #ffebee; border-radius: 16px; border: 2px dashed #ffcdd2; text-align: left;
   }
   .training-title { font-size: 20px; color: #c62828; font-weight: bold; margin-bottom: 10px; }
   .training-desc { font-size: 16px; color: #555; margin-bottom: 15px; line-height: 1.5; }
@@ -295,6 +302,12 @@
       <button class="action-btn" onclick="addMedication()">新增藥品</button>
     </div>
 
+    <div class="export-box">
+      <div class="export-title">🖨️ 匯出完整紀錄 (回診用)</div>
+      <div class="export-desc">下載所有吃藥的歷史紀錄為 Excel (CSV) 檔案，方便您排版並列印給醫生看。</div>
+      <button class="export-btn" onclick="exportFullHistory()">📄 下載完整吃藥紀錄</button>
+    </div>
+
     <div class="training-box">
       <div class="training-title">🛠️ 教學模式 / 重新開始</div>
       <div class="training-desc">把手機交給長輩練習打卡，練習完畢後點擊下方按鈕，即可將目前選擇的藥品紀錄全部清空。</div>
@@ -328,7 +341,7 @@
   let currentMedName = '';
   let showHistory = false;
   let userName = '坤山';
-  let historyFilterMode = 'all'; // 🌟 新增變數：預設顯示全部藥品
+  let historyFilterMode = 'all';
 
   function playDingSound() {
     try {
@@ -480,6 +493,55 @@
     }
   }
 
+  // 🌟 全新功能：匯出所有歷史紀錄為 CSV
+  function exportFullHistory() {
+    let combinedHistory = [];
+    
+    // 把所有藥品的紀錄通通挖出來
+    medications.forEach(med => {
+      const saved = localStorage.getItem('med_history_arr_' + med.name);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        arr.forEach(ts => {
+          combinedHistory.push({ ts: ts, name: med.name });
+        });
+      }
+    });
+
+    if (combinedHistory.length === 0) {
+      alert('目前還沒有任何吃藥打卡紀錄可以匯出喔！');
+      return;
+    }
+
+    // 依照時間由新到舊排序
+    combinedHistory.sort((a, b) => b.ts - a.ts);
+
+    // 製作 CSV 內容 (加上 BOM 確保用 Excel 開啟時中文不會亂碼)
+    let csvContent = "\uFEFF"; 
+    csvContent += "日期,時間,藥品名稱\n";
+
+    combinedHistory.forEach(item => {
+      const d = new Date(item.ts);
+      const dateStr = d.toLocaleDateString('zh-TW', {year: 'numeric', month: '2-digit', day: '2-digit'});
+      const timeStr = d.toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+      csvContent += `${dateStr},${timeStr},${item.name}\n`;
+    });
+
+    // 建立下載連結並觸發下載
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    // 檔名加上今天的日期
+    const todayStr = new Date().toLocaleDateString('zh-TW').replace(/\//g, '');
+    link.setAttribute("download", `${userName}的吃藥紀錄_${todayStr}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   function selectMed(medName) {
     currentMedName = medName;
     document.querySelectorAll('.med-btn').forEach(btn => {
@@ -530,7 +592,6 @@
     else { box.classList.add('hidden'); }
   }
 
-  // 🌟 切換歷史紀錄濾鏡
   function setHistoryFilter(mode) {
     historyFilterMode = mode;
     document.getElementById('filter-all').classList.remove('active');
@@ -539,7 +600,6 @@
     renderHistoryList();
   }
 
-  // 🌟 全新升級的歷史紀錄渲染邏輯（支援全部藥品與單一藥品切換）
   function renderHistoryList() {
     const itemsContainer = document.getElementById('history-list-items');
     if (medications.length === 0) { itemsContainer.innerHTML = '暫無藥品資料'; return; }
@@ -548,9 +608,7 @@
     const nowMs = new Date().getTime(); 
     const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
 
-    // 抓取資料邏輯
     if (historyFilterMode === 'all') {
-      // 模式：全部藥品
       medications.forEach(med => {
         const saved = localStorage.getItem('med_history_arr_' + med.name);
         if (saved) {
@@ -563,7 +621,6 @@
         }
       });
     } else {
-      // 模式：單一藥品
       if (!currentMedName) return;
       const currentMed = medications.find(m => m.name === currentMedName);
       const saved = localStorage.getItem('med_history_arr_' + currentMedName);
@@ -577,7 +634,6 @@
       }
     }
 
-    // 依照時間由新到舊排序
     combinedHistory.sort((a, b) => b.ts - a.ts);
 
     if (combinedHistory.length === 0) { 
@@ -585,7 +641,6 @@
       return; 
     }
 
-    // 渲染清單，特別把藥品名稱用亮色標示出來
     itemsContainer.innerHTML = combinedHistory.map(item => {
       const d = new Date(item.ts);
       const dateStr = d.toLocaleDateString([], {month: '2-digit', day: '2-digit'});
