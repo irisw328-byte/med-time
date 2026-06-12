@@ -120,14 +120,32 @@
   .alert { color: #d32f2f; font-weight: bold; display: block; margin-top: 10px; font-size: 22px; }
   .ok { color: #388e3c; font-weight: bold; display: block; margin-top: 10px; }
 
+  /* 歷史紀錄區塊設計 */
   .history-toggle-btn {
     width: 100%; padding: 16px; background: #e3f2fd; color: #1e88e5; border: 2px dashed #1e88e5; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer;
   }
   .history-log-box {
-    margin-top: 15px; background: #fafafa; border: 1px solid #eee; border-radius: 16px; padding: 15px; text-align: left; max-height: 250px; overflow-y: auto; font-size: 18px;
+    margin-top: 15px; background: #fafafa; border: 1px solid #eee; border-radius: 16px; padding: 15px; text-align: left; font-size: 18px;
   }
-  .history-item { padding: 10px 0; border-bottom: 1px solid #eee; color: #444; }
+  
+  /* 🌟 新增的濾鏡按鈕設計 */
+  .history-filter {
+    display: flex; gap: 10px; margin-bottom: 15px;
+  }
+  .filter-btn {
+    flex: 1; padding: 10px; border: 2px solid #2196F3; background: white; color: #2196F3; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer;
+  }
+  .filter-btn.active {
+    background: #2196F3; color: white;
+  }
+
+  .history-list-container {
+    max-height: 250px; overflow-y: auto;
+  }
+  .history-item { padding: 12px 0; border-bottom: 1px solid #ddd; color: #444; display: flex; align-items: center; gap: 10px; }
   .history-item:last-child { border-bottom: none; }
+  .history-time { color: #666; font-size: 16px; min-width: 130px; }
+  .history-med-name { font-weight: bold; font-size: 18px; color: #1e88e5; }
 
   .hidden { display: none !important; }
   
@@ -214,7 +232,11 @@
     <div>
       <button class="history-toggle-btn" onclick="toggleHistoryZone()">📊 查看最近 3 天紀錄</button>
       <div id="history-log-box" class="history-log-box hidden">
-        <div id="history-list-items">暫無紀錄</div>
+        <div class="history-filter">
+          <button id="filter-all" class="filter-btn active" onclick="setHistoryFilter('all')">顯示全部藥品</button>
+          <button id="filter-current" class="filter-btn" onclick="setHistoryFilter('current')">只看單項藥品</button>
+        </div>
+        <div class="history-list-container" id="history-list-items">暫無紀錄</div>
       </div>
     </div>
   </div>
@@ -306,6 +328,7 @@
   let currentMedName = '';
   let showHistory = false;
   let userName = '坤山';
+  let historyFilterMode = 'all'; // 🌟 新增變數：預設顯示全部藥品
 
   function playDingSound() {
     try {
@@ -392,7 +415,6 @@
     });
   }
 
-  // 🌟 更新顯示轉換，完美匹配後台新增的項目
   function getFrequencyText(interval) {
     if (interval === 24) return '一天 1 次 (24小時)';
     if (interval === 12) return '一天 2 次 (12小時)';
@@ -508,20 +530,72 @@
     else { box.classList.add('hidden'); }
   }
 
+  // 🌟 切換歷史紀錄濾鏡
+  function setHistoryFilter(mode) {
+    historyFilterMode = mode;
+    document.getElementById('filter-all').classList.remove('active');
+    document.getElementById('filter-current').classList.remove('active');
+    document.getElementById('filter-' + mode).classList.add('active');
+    renderHistoryList();
+  }
+
+  // 🌟 全新升級的歷史紀錄渲染邏輯（支援全部藥品與單一藥品切換）
   function renderHistoryList() {
     const itemsContainer = document.getElementById('history-list-items');
-    if (!currentMedName) { itemsContainer.innerHTML = '暫無資料'; return; }
-    const savedHistory = localStorage.getItem('med_history_arr_' + currentMedName);
-    if (!savedHistory) { itemsContainer.innerHTML = '這三天沒有紀錄喔。'; return; }
+    if (medications.length === 0) { itemsContainer.innerHTML = '暫無藥品資料'; return; }
 
-    let historyArr = JSON.parse(savedHistory);
-    const nowMs = new Date().getTime(); const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-    let recentPunches = historyArr.filter(ts => (nowMs - ts) <= threeDaysMs).sort((a, b) => b - a);
+    let combinedHistory = [];
+    const nowMs = new Date().getTime(); 
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
 
-    if (recentPunches.length === 0) { itemsContainer.innerHTML = '最近 3 天沒有紀錄。'; return; }
-    itemsContainer.innerHTML = recentPunches.map(ts => {
-      const d = new Date(ts);
-      return `<div class="history-item">🗓️ ${d.toLocaleDateString([], {month: '2-digit', day: '2-digit'})} 於 ${d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} 服用</div>`;
+    // 抓取資料邏輯
+    if (historyFilterMode === 'all') {
+      // 模式：全部藥品
+      medications.forEach(med => {
+        const saved = localStorage.getItem('med_history_arr_' + med.name);
+        if (saved) {
+          const arr = JSON.parse(saved);
+          arr.forEach(ts => {
+            if ((nowMs - ts) <= threeDaysMs) {
+              combinedHistory.push({ ts: ts, name: med.name, icon: med.icon });
+            }
+          });
+        }
+      });
+    } else {
+      // 模式：單一藥品
+      if (!currentMedName) return;
+      const currentMed = medications.find(m => m.name === currentMedName);
+      const saved = localStorage.getItem('med_history_arr_' + currentMedName);
+      if (saved) {
+        const arr = JSON.parse(saved);
+        arr.forEach(ts => {
+          if ((nowMs - ts) <= threeDaysMs) {
+            combinedHistory.push({ ts: ts, name: currentMed.name, icon: currentMed.icon });
+          }
+        });
+      }
+    }
+
+    // 依照時間由新到舊排序
+    combinedHistory.sort((a, b) => b.ts - a.ts);
+
+    if (combinedHistory.length === 0) { 
+      itemsContainer.innerHTML = '最近 3 天沒有紀錄喔。'; 
+      return; 
+    }
+
+    // 渲染清單，特別把藥品名稱用亮色標示出來
+    itemsContainer.innerHTML = combinedHistory.map(item => {
+      const d = new Date(item.ts);
+      const dateStr = d.toLocaleDateString([], {month: '2-digit', day: '2-digit'});
+      const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+      return `
+        <div class="history-item">
+          <div class="history-time">🗓️ ${dateStr} ${timeStr}</div>
+          <div class="history-med-name">${item.icon || '💊'} ${item.name}</div>
+        </div>
+      `;
     }).join('');
   }
 
